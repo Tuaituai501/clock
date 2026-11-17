@@ -1,0 +1,19 @@
+{
+  "name": "轻时刻 · 计时工具",
+  "short_name": "轻时刻",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#fff9f2",
+  "theme_color": "#fff9f2",
+  "description": "明亮轻松的正计时、倒计时、专注与事件日工具。",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
+
