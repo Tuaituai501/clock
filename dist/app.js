@@ -2,7 +2,8 @@ const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 const STORAGE = {
   tasks: "light-time-tasks-v1",
-  focus: "light-time-focus-v1"
+  focus: "light-time-focus-v1",
+  installGuideDismissed: "light-time-install-guide-dismissed-v1"
 };
 
 let tickHandle;
@@ -427,7 +428,8 @@ function bindEvents() {
     toast(permission === "granted" ? "提醒已开启。" : "未开启提醒，你仍可在页面内使用计时。");
   });
   $("#install-button").addEventListener("click", showInstall);
-  $("#close-install-guide").addEventListener("click", dismissInstallGuide);
+  $("#close-install-guide").addEventListener("click", () => dismissInstallGuide());
+  $("#dismiss-install-guide").addEventListener("click", () => dismissInstallGuide(true));
   window.addEventListener("keydown", (event) => {
     if (event.key === "Escape") dismissInstallGuide();
   });
@@ -442,15 +444,21 @@ async function showInstall() {
   }
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
   if (ios) {
+    localStorage.removeItem(STORAGE.installGuideDismissed);
     $("#install-guide").hidden = false;
   } else {
     toast("请在浏览器菜单中选择“安装应用”或“添加到主屏幕”。");
   }
 }
 
-function dismissInstallGuide() {
+function dismissInstallGuide(remember = false) {
   $("#install-guide").hidden = true;
-  toast("好的，想安装时可随时点右上角下载按钮。");
+  if (remember) {
+    localStorage.setItem(STORAGE.installGuideDismissed, "true");
+    toast("已关闭安装提示。需要时仍可点右上角下载按钮查看。");
+  } else {
+    toast("已关闭安装提示。");
+  }
 }
 
 function initInstallPrompt() {
