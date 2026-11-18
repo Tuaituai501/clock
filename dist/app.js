@@ -3,7 +3,8 @@ const $$ = (selector) => [...document.querySelectorAll(selector)];
 const STORAGE = {
   tasks: "light-time-tasks-v1",
   focus: "light-time-focus-v1",
-  timeEntries: "light-time-time-entries-v1"
+  timeEntries: "light-time-time-entries-v1",
+  installGuideDismissed: "light-time-install-guide-dismissed-v1"
 };
 
 let tickHandle;
@@ -555,9 +556,10 @@ function bindEvents() {
     toast(permission === "granted" ? "提醒已开启。" : "未开启提醒，你仍可在页面内使用计时。");
   });
   $("#install-button").addEventListener("click", showInstall);
-  $("#close-install-guide").addEventListener("click", dismissInstallGuide);
+  $("#close-install-guide").addEventListener("click", closeInstallGuide);
+  $("#dismiss-install-guide").addEventListener("click", disableInstallGuide);
   window.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") dismissInstallGuide();
+    if (event.key === "Escape") closeInstallGuide();
   });
 }
 
@@ -576,9 +578,23 @@ async function showInstall() {
   }
 }
 
-function dismissInstallGuide() {
+function closeInstallGuide() {
   $("#install-guide").hidden = true;
   toast("已关闭安装提示。");
+}
+
+function disableInstallGuide() {
+  localStorage.setItem(STORAGE.installGuideDismissed, "true");
+  $("#install-guide").hidden = true;
+  toast("后续打开页面将不再显示安装提示。");
+}
+
+function scheduleInstallGuide() {
+  const standalone = window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone;
+  if (standalone || localStorage.getItem(STORAGE.installGuideDismissed) === "true") return;
+  window.setTimeout(() => {
+    $("#install-guide").hidden = false;
+  }, 650);
 }
 
 function initInstallPrompt() {
@@ -596,6 +612,7 @@ function init() {
   updateTodayLabel();
   bindEvents();
   initInstallPrompt();
+  scheduleInstallGuide();
   renderLaps();
   renderEvents();
   updateStopwatch();
