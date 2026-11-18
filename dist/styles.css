@@ -89,6 +89,18 @@ h3 { margin-bottom: 0; font-size: 15px; letter-spacing: -.02em; }
 .preset-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 17px; }
 .preset-row button { padding: 8px 11px; border: 1px solid var(--line); border-radius: 99px; color: var(--muted); background: rgba(255,255,255,.54); font-size: 12px; }
 .preset-row button.selected { border-color: transparent; color: var(--ink); background: var(--mint); font-weight: 700; }
+.reminder-card { margin-top: 16px; }
+.reminder-note { margin: 5px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.reminder-form { display: grid; grid-template-columns: 1.15fr 1fr auto; gap: 10px; align-items: end; margin-top: 17px; }
+.reminder-form label { display: grid; gap: 6px; color: var(--muted); font-size: 11px; }
+.reminder-form input { min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: 11px; color: var(--ink); background: rgba(255,255,255,.62); outline: 0; font-size: 13px; }
+.reminder-form .primary-button { min-width: auto; padding: 11px 13px; font-size: 12px; white-space: nowrap; }
+.reminder-list { display: grid; gap: 7px; margin-top: 14px; }
+.reminder-item { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+.reminder-item b { display: block; margin-bottom: 3px; font-size: 12px; }
+.reminder-item span { color: var(--muted); font-size: 11px; }
+.reminder-item button { padding: 5px 7px; border: 0; color: #a46f60; background: transparent; font-size: 11px; }
+.reminder-empty { padding-top: 2px; color: var(--muted); font-size: 11px; }
 .focus-layout { display: grid; grid-template-columns: 1.35fr .65fr; gap: 16px; }
 .focus-stage { display: grid; place-items: center; padding: 31px 22px 25px; background: linear-gradient(135deg, rgba(255,255,255,.82), rgba(224, 238, 231, .74)); }
 .focus-orbit { display: flex; width: min(62vw, 270px); aspect-ratio: 1; flex-direction: column; align-items: center; justify-content: center; border: 14px solid rgba(255,255,255,.72); border-radius: 48% 52% 50% 50% / 52% 46% 54% 48%; background: rgba(255,255,255,.55); text-align: center; box-shadow: inset 0 0 0 1px rgba(94,150,125,.11); }
@@ -207,6 +219,8 @@ h3 { margin-bottom: 0; font-size: 15px; letter-spacing: -.02em; }
   .cycle-card { min-height: 137px; }
   .event-form { grid-template-columns: 1fr; }
   .form-actions { grid-column: auto; }
+  .reminder-form { grid-template-columns: 1fr; }
+  .reminder-form .primary-button { justify-self: start; }
   .plan-card { grid-template-columns: auto minmax(0, 1fr); }
   .plan-actions { grid-column: 2; justify-content: flex-start; }
   .analytics-overview { grid-template-columns: 1fr; gap: 20px; }
