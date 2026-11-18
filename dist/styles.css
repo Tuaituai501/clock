@@ -166,6 +166,7 @@ h3 { margin-bottom: 0; font-size: 15px; letter-spacing: -.02em; }
 .plan-completion-label { color: var(--muted); font-size: 11px; }
 .plan-record { color: white; background: var(--ink); }
 .plan-complete { color: #75614d; background: #f6e8dc; }
+.plan-complete:disabled { opacity: .55; cursor: default; }
 .plan-delete { color: #a46f60; background: #f8eeeb; }
 .event-empty { padding: 36px 24px; border: 1px dashed rgba(94,150,125,.29); border-radius: 20px; color: var(--muted); background: rgba(255,255,255,.32); text-align: center; font-size: 13px; line-height: 1.7; }
 .stats-link { display: block; margin: 24px auto 0; padding: 4px; border: 0; color: var(--muted); background: transparent; font-size: 12px; }
