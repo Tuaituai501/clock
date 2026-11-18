@@ -4,7 +4,8 @@ const STORAGE = {
   tasks: "light-time-tasks-v1",
   focus: "light-time-focus-v1",
   timeEntries: "light-time-time-entries-v1",
-  installGuideDismissed: "light-time-install-guide-dismissed-v1"
+  installGuideDismissed: "light-time-install-guide-dismissed-v1",
+  reminders: "light-time-reminders-v1"
 };
 
 let tickHandle;
@@ -15,6 +16,7 @@ let focus = { running: false, mode: "focus", duration: 25 * 60_000, remaining: 2
 let tasks = safeRead(STORAGE.tasks, []);
 let focusData = safeRead(STORAGE.focus, { total: 0, days: {} });
 let timeEntries = safeRead(STORAGE.timeEntries, []);
+let reminders = safeRead(STORAGE.reminders, []);
 const ANALYTICS_COLORS = ["#5e967d", "#d88864", "#8477bd", "#d3aa49", "#5c9eaf", "#ca7291"];
 
 function safeRead(key, fallback) {
@@ -83,11 +85,37 @@ function addTimeEntry(name, durationMs, source = "stopwatch") {
 
 function notify(title, body) {
   if ("Notification" in window && Notification.permission === "granted") {
-    navigator.serviceWorker?.ready.then((registration) => {
-      registration.showNotification(title, { body, icon: "./icon.svg", tag: "light-time" });
-    }).catch(() => new Notification(title, { body }));
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.ready
+        .then((registration) => registration.showNotification(title, { body, icon: "./icon.svg", tag: `light-time-${Date.now()}` }))
+        .catch(() => new Notification(title, { body }));
+    } else {
+      new Notification(title, { body });
+    }
   }
   toast(body);
+}
+
+function updateNotificationState() {
+  const supported = "Notification" in window;
+  const permission = supported ? Notification.permission : "unsupported";
+  const button = $("#notification-button");
+  const status = $("#reminder-permission");
+  if (!supported) {
+    button.textContent = "!";
+    button.title = "当前浏览器不支持系统通知";
+    status.textContent = "不支持";
+    return;
+  }
+  if (permission === "granted") {
+    button.textContent = "🔔";
+    button.title = "消息提醒已开启";
+    status.textContent = "已开启";
+    return;
+  }
+  button.textContent = "🔕";
+  button.title = "点击开启消息提醒";
+  status.textContent = permission === "denied" ? "已拒绝" : "未开启";
 }
 
 function updateTodayLabel() {
@@ -447,6 +475,56 @@ function renderAnalytics() {
   </div>`).join("");
 }
 
+function reminderDateTime(value) {
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "long", day: "numeric", hour: "2-digit", minute: "2-digit"
+  }).format(new Date(value));
+}
+
+function renderReminders() {
+  const list = $("#reminder-list");
+  const upcoming = reminders
+    .filter((reminder) => !reminder.notified)
+    .sort((a, b) => a.dueAt - b.dueAt);
+  if (!upcoming.length) {
+    list.innerHTML = '<div class="reminder-empty">暂时没有待提醒的事项。</div>';
+    return;
+  }
+  list.innerHTML = upcoming.map((reminder) => `<div class="reminder-item">
+    <div><b>${escapeHtml(reminder.title)}</b><span>${reminderDateTime(reminder.dueAt)}</span></div>
+    <button data-delete-reminder="${reminder.id}">取消</button>
+  </div>`).join("");
+}
+
+function checkReminders() {
+  let changed = false;
+  const now = Date.now();
+  reminders.forEach((reminder) => {
+    if (!reminder.notified && reminder.dueAt <= now) {
+      reminder.notified = true;
+      changed = true;
+      notify("时间提醒", reminder.title);
+    }
+  });
+  if (changed) {
+    save(STORAGE.reminders, reminders);
+    renderReminders();
+  }
+}
+
+function addReminder(event) {
+  event.preventDefault();
+  const title = $("#reminder-title").value.trim();
+  const dueAt = new Date($("#reminder-time").value).getTime();
+  if (!title || !Number.isFinite(dueAt)) return;
+  if (dueAt <= Date.now()) return toast("提醒时间需要晚于当前时间。");
+  reminders.push({ id: String(Date.now()), title, dueAt, notified: false });
+  save(STORAGE.reminders, reminders);
+  $("#reminder-form").reset();
+  renderReminders();
+  toast(`已设定「${title}」提醒。`);
+}
+
 function addEvent(event) {
   event.preventDefault();
   const name = $("#event-name").value.trim();
@@ -483,6 +561,7 @@ function startTicker() {
     updateFocus();
     renderEvents();
     renderAnalytics();
+    checkReminders();
   }, 500);
 }
 
@@ -507,6 +586,15 @@ function bindEvents() {
   $("#countdown-name").addEventListener("input", updateCountdown);
   $("#countdown-minutes").addEventListener("change", (event) => setCountdownMinutes(event.target.value));
   $$(".preset-row button").forEach((button) => button.addEventListener("click", () => setCountdownMinutes(button.dataset.minutes)));
+  $("#reminder-form").addEventListener("submit", addReminder);
+  $("#reminder-list").addEventListener("click", (event) => {
+    const id = event.target.dataset.deleteReminder;
+    if (!id) return;
+    reminders = reminders.filter((reminder) => reminder.id !== id);
+    save(STORAGE.reminders, reminders);
+    renderReminders();
+    toast("已取消提醒。");
+  });
   $("#focus-start").addEventListener("click", focusStartOrPause);
   $("#focus-skip").addEventListener("click", skipFocus);
   $("#show-event-form").addEventListener("click", () => {
@@ -541,10 +629,12 @@ function bindEvents() {
     tasks = [];
     focusData = { total: 0, days: {} };
     timeEntries = [];
+    reminders = [];
     localStorage.removeItem(STORAGE.tasks);
     localStorage.removeItem("light-time-events-v1");
     localStorage.removeItem(STORAGE.focus);
     localStorage.removeItem(STORAGE.timeEntries);
+    localStorage.removeItem(STORAGE.reminders);
     renderEvents();
     updateStats();
     renderAnalytics();
@@ -553,6 +643,7 @@ function bindEvents() {
   $("#notification-button").addEventListener("click", async () => {
     if (!("Notification" in window)) return toast("当前浏览器不支持通知提醒。");
     const permission = await Notification.requestPermission();
+    updateNotificationState();
     toast(permission === "granted" ? "提醒已开启。" : "未开启提醒，你仍可在页面内使用计时。");
   });
   $("#install-button").addEventListener("click", showInstall);
@@ -621,6 +712,8 @@ function init() {
   updateStats();
   $("#analytics-date").value = todayInputValue();
   renderAnalytics();
+  renderReminders();
+  updateNotificationState();
   startTicker();
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("./service-worker.js").catch(() => {});
 }
