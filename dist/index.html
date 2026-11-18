@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#fff9f2" />
     <meta name="description" content="轻时刻：明亮、专注的个人计时工具。" />
-    <link rel="manifest" href="./manifest.webmanifest?v=12" />
-    <link rel="stylesheet" href="./styles.css?v=12" />
+    <link rel="manifest" href="./manifest.webmanifest?v=13" />
+    <link rel="stylesheet" href="./styles.css?v=13" />
     <link rel="apple-touch-icon" href="./icon.svg" />
     <title>轻时刻 · 计时工具</title>
   </head>
@@ -20,7 +20,7 @@
           <span>轻时刻</span>
         </a>
         <div class="topbar-actions">
-          <button id="notification-button" class="icon-button" aria-label="开启提醒" title="开启提醒">♧</button>
+          <button id="notification-button" class="icon-button" aria-label="开启消息提醒" title="开启消息提醒">🔔</button>
           <button id="install-button" class="icon-button" aria-label="安装轻时刻" title="安装到主屏幕">↓</button>
         </div>
       </header>
@@ -127,6 +127,21 @@
               <button data-minutes="45">45 分钟</button>
               <button data-minutes="60">60 分钟</button>
             </div>
+          </article>
+          <article class="card soft-card reminder-card">
+            <div class="card-title-row">
+              <div>
+                <h3>定时提醒</h3>
+                <p class="reminder-note">到点后弹出通知；请先点右上角铃铛开启权限。</p>
+              </div>
+              <span id="reminder-permission" class="tiny-label">未开启</span>
+            </div>
+            <form id="reminder-form" class="reminder-form">
+              <label><span>提醒内容</span><input id="reminder-title" maxlength="24" placeholder="例如：该出门了" required /></label>
+              <label><span>提醒时间</span><input id="reminder-time" type="datetime-local" required /></label>
+              <button type="submit" class="primary-button">设定提醒</button>
+            </form>
+            <div id="reminder-list" class="reminder-list"></div>
           </article>
         </section>
 
@@ -249,7 +264,7 @@
       </aside>
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
     </div>
-    <script src="./app.js?v=12"></script>
+    <script src="./app.js?v=13"></script>
   </body>
 </html>
 
