@@ -159,6 +159,31 @@ h3 { margin-bottom: 0; font-size: 15px; letter-spacing: -.02em; }
 .stats-grid b { font-size: 25px; }
 .stats-sheet p { color: var(--muted); font-size: 11px; line-height: 1.6; }
 .danger-button { margin-top: 3px; color: #ac725f; background: #f8e7df; }
+.analytics-date-select { display: flex; align-items: center; gap: 8px; margin-top: 2px; padding: 7px 9px 7px 11px; border: 1px solid var(--line); border-radius: 11px; color: var(--muted); background: rgba(255,255,255,.58); font-size: 11px; }
+.analytics-date-select input { min-width: 119px; border: 0; color: var(--ink); background: transparent; font-size: 12px; font-weight: 650; outline: 0; }
+.analytics-overview { display: grid; grid-template-columns: minmax(210px, .88fr) 1.12fr; gap: 24px; align-items: center; padding: 25px; background: linear-gradient(135deg, rgba(255,255,255,.88), rgba(227,241,234,.7)); }
+.analytics-donut { display: grid; width: min(55vw, 240px); aspect-ratio: 1; place-items: center; justify-self: center; border-radius: 50%; background: #e9efeb; box-shadow: inset 0 0 0 8px rgba(255,255,255,.42); transition: background .35s ease; }
+.analytics-donut-center { display: flex; width: calc(100% - 45px); height: calc(100% - 45px); flex-direction: column; align-items: center; justify-content: center; border-radius: 50%; background: #fffefa; text-align: center; box-shadow: 0 4px 18px rgba(74, 89, 80, .05); }
+.analytics-donut-center span, .analytics-donut-center small { color: var(--muted); font-size: 11px; }
+.analytics-donut-center strong { margin: 5px 0; color: var(--ink); font-size: clamp(23px, 4.5vw, 31px); letter-spacing: -.06em; font-variant-numeric: tabular-nums; }
+.analytics-overview-copy h3 { margin: 0 0 9px; font-size: 22px; letter-spacing: -.04em; }
+.analytics-overview-copy > p:not(.eyebrow) { max-width: 380px; margin-bottom: 18px; color: var(--muted); font-size: 13px; line-height: 1.65; }
+.analytics-mini-stats { display: grid; grid-template-columns: 1fr 1fr; max-width: 360px; gap: 9px; }
+.analytics-mini-stats div { padding: 11px 12px; border-radius: 13px; background: rgba(255,255,255,.55); }
+.analytics-mini-stats span { display: block; color: var(--muted); font-size: 11px; }
+.analytics-mini-stats b { display: block; margin-top: 4px; color: var(--ink); font-size: 16px; font-weight: 750; }
+.analytics-breakdown { margin-top: 16px; }
+.analytics-legend { display: grid; gap: 11px; margin-top: 18px; }
+.analytics-legend-row { display: grid; grid-template-columns: 11px minmax(0, 1fr) auto; align-items: center; gap: 9px; }
+.analytics-color { width: 10px; height: 10px; border-radius: 50%; }
+.analytics-legend-main { min-width: 0; }
+.analytics-legend-label { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; color: var(--ink); font-size: 13px; }
+.analytics-legend-label b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 650; }
+.analytics-legend-label span { color: var(--muted); font-size: 11px; }
+.analytics-legend-bar { height: 5px; overflow: hidden; border-radius: 99px; background: #edf1ee; }
+.analytics-legend-bar i { display: block; height: 100%; border-radius: inherit; }
+.analytics-legend-time { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.analytics-empty { padding: 18px 0 4px; color: var(--muted); font-size: 13px; text-align: center; }
 .install-guide { position: fixed; z-index: 8; right: 17px; bottom: calc(18px + env(safe-area-inset-bottom)); left: 17px; display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 15px 16px; border: 1px solid rgba(255,255,255,.86); border-radius: 18px; background: rgba(45,57,51,.94); color: white; box-shadow: 0 18px 45px rgba(45,57,51,.22); }
 .install-guide > div { display: flex; gap: 11px; align-items: center; }
 .guide-icon { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 10px; background: rgba(255,255,255,.13); color: #d6f1e4; }
@@ -183,6 +208,10 @@ h3 { margin-bottom: 0; font-size: 15px; letter-spacing: -.02em; }
   .form-actions { grid-column: auto; }
   .plan-card { grid-template-columns: auto minmax(0, 1fr); }
   .plan-actions { grid-column: 2; justify-content: flex-start; }
+  .analytics-overview { grid-template-columns: 1fr; gap: 20px; }
+  .analytics-overview-copy { text-align: center; }
+  .analytics-overview-copy > p:not(.eyebrow) { margin-right: auto; margin-left: auto; }
+  .analytics-mini-stats { margin: 0 auto; text-align: left; }
 }
 @media (max-width: 385px) {
   .focus-side { grid-template-columns: 1fr; }
