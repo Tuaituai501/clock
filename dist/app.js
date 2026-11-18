@@ -309,8 +309,33 @@ function persistTasks() {
 
 function pauseTask(task) {
   if (!task?.startedAt) return;
+  checkTaskReminder(task);
   task.actualMs += Date.now() - task.startedAt;
   task.startedAt = null;
+}
+
+function checkTaskReminder(task) {
+  if (!task.startedAt || !task.remindOnTime || task.reminderSent || task.completed) return;
+  if (taskActualMilliseconds(task) < task.plannedMinutes * 60_000) return;
+  task.reminderSent = true;
+  persistTasks();
+  notify("计划时间到了", `「${task.name}」已达到计划的 ${task.plannedMinutes} 分钟。`);
+}
+
+function checkTaskReminders() {
+  tasks.forEach(checkTaskReminder);
+}
+
+async function requestPlanNotificationPermission() {
+  if (!("Notification" in window)) {
+    toast("当前浏览器不支持系统通知；页面打开时仍会显示提醒。");
+    return;
+  }
+  if (Notification.permission === "default") {
+    try { await Notification.requestPermission(); } catch (_) { /* 页面内提示仍可使用 */ }
+  }
+  updateNotificationState();
+  if (Notification.permission !== "granted") toast("请通过右上角铃铛开启通知；页面打开时仍会显示提醒。");
 }
 
 function toggleTaskRecording(id) {
@@ -364,6 +389,8 @@ function renderEvents() {
           <div class="plan-progress" aria-label="已完成计划的 ${progress}%"><i style="width: ${progress}%"></i></div>
         </div>
         <div class="plan-actions">
+          <span class="plan-completion-label">${task.completed ? "已完成" : "左侧勾选完成"}</span>
+          <label class="plan-reminder-option"><input type="checkbox" data-task-reminder="${task.id}" ${task.remindOnTime ? "checked" : ""} />到时提醒</label>
           <button class="plan-record" data-task-action="record" data-task-id="${task.id}">${recordLabel}</button>
           <button class="plan-delete" data-task-action="delete" data-task-id="${task.id}">删除</button>
         </div>
@@ -530,7 +557,7 @@ function addEvent(event) {
   const name = $("#event-name").value.trim();
   const plannedMinutes = Math.min(720, Math.max(1, Number($("#event-minutes").value) || 30));
   if (!name) return;
-  tasks.push({ id: String(Date.now()), name, plannedMinutes, actualMs: 0, startedAt: null, completed: false, day: todayKey(), createdAt: Date.now() });
+  tasks.push({ id: String(Date.now()), name, plannedMinutes, actualMs: 0, startedAt: null, completed: false, remindOnTime: $("#event-remind").checked, reminderSent: false, day: todayKey(), createdAt: Date.now() });
   persistTasks();
   $("#event-form").reset();
   $("#event-minutes").value = 30;
@@ -559,6 +586,7 @@ function startTicker() {
     updateStopwatch();
     updateCountdown();
     updateFocus();
+    checkTaskReminders();
     renderEvents();
     renderAnalytics();
     checkReminders();
@@ -603,9 +631,21 @@ function bindEvents() {
   });
   $("#cancel-event").addEventListener("click", () => $("#event-form").hidden = true);
   $("#event-form").addEventListener("submit", addEvent);
+  $("#event-remind").addEventListener("change", (event) => {
+    if (event.target.checked) requestPlanNotificationPermission();
+  });
   $("#event-list").addEventListener("change", (event) => {
     const id = event.target.dataset.taskToggle;
     if (id) setTaskCompletion(id, event.target.checked);
+    const reminderId = event.target.dataset.taskReminder;
+    if (reminderId) {
+      const task = tasks.find((item) => item.id === reminderId);
+      if (!task) return;
+      task.remindOnTime = event.target.checked;
+      persistTasks();
+      if (task.remindOnTime) requestPlanNotificationPermission();
+      renderEvents();
+    }
   });
   $("#event-list").addEventListener("click", (event) => {
     const id = event.target.dataset.taskId;
