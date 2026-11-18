@@ -1,10 +1,10 @@
-const CACHE_NAME = "light-time-v12";
+const CACHE_NAME = "light-time-v13";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=12",
-  "./app.js?v=12",
-  "./manifest.webmanifest?v=12",
+  "./styles.css?v=13",
+  "./app.js?v=13",
+  "./manifest.webmanifest?v=13",
   "./icon.svg"
 ];
 
@@ -28,6 +28,16 @@ self.addEventListener("fetch", (event) => {
       caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
       return response;
     }).catch(() => caches.match("./index.html")))
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      const existingClient = clients[0];
+      return existingClient ? existingClient.focus() : self.clients.openWindow("./");
+    })
   );
 });
 
