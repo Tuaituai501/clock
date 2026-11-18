@@ -389,9 +389,9 @@ function renderEvents() {
           <div class="plan-progress" aria-label="已完成计划的 ${progress}%"><i style="width: ${progress}%"></i></div>
         </div>
         <div class="plan-actions">
-          <span class="plan-completion-label">${task.completed ? "已完成" : "左侧勾选完成"}</span>
           <label class="plan-reminder-option"><input type="checkbox" data-task-reminder="${task.id}" ${task.remindOnTime ? "checked" : ""} />到时提醒</label>
           <button class="plan-record" data-task-action="record" data-task-id="${task.id}">${recordLabel}</button>
+          <button class="plan-complete" data-task-action="complete" data-task-id="${task.id}" ${task.completed ? "disabled" : ""}>${task.completed ? "已完成" : "完成"}</button>
           <button class="plan-delete" data-task-action="delete" data-task-id="${task.id}">删除</button>
         </div>
       </article>`;
@@ -652,6 +652,7 @@ function bindEvents() {
     const action = event.target.dataset.taskAction;
     if (!id || !action) return;
     if (action === "record") toggleTaskRecording(id);
+    if (action === "complete") setTaskCompletion(id, true);
     if (action === "delete") {
       const task = tasks.find((item) => item.id === id);
       if (!task || !confirm(`删除「${task.name}」及其实际用时记录吗？`)) return;
