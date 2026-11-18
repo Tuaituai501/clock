@@ -2,7 +2,8 @@ const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 const STORAGE = {
   tasks: "light-time-tasks-v1",
-  focus: "light-time-focus-v1"
+  focus: "light-time-focus-v1",
+  timeEntries: "light-time-time-entries-v1"
 };
 
 let tickHandle;
@@ -12,6 +13,8 @@ let countdown = { running: false, duration: 25 * 60_000, remaining: 25 * 60_000,
 let focus = { running: false, mode: "focus", duration: 25 * 60_000, remaining: 25 * 60_000, endAt: null };
 let tasks = safeRead(STORAGE.tasks, []);
 let focusData = safeRead(STORAGE.focus, { total: 0, days: {} });
+let timeEntries = safeRead(STORAGE.timeEntries, []);
+const ANALYTICS_COLORS = ["#5e967d", "#d88864", "#8477bd", "#d3aa49", "#5c9eaf", "#ca7291"];
 
 function safeRead(key, fallback) {
   try {
@@ -40,12 +43,41 @@ function todayKey() {
   return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 }
 
+function todayInputValue() {
+  const now = new Date();
+  const two = (number) => String(number).padStart(2, "0");
+  return `${now.getFullYear()}-${two(now.getMonth() + 1)}-${two(now.getDate())}`;
+}
+
+function dateKeyFromInput(value) {
+  if (!value) return todayKey();
+  const [year, month, day] = value.split("-").map(Number);
+  return `${year}-${month}-${day}`;
+}
+
 function toast(message) {
   const element = $("#toast");
   element.textContent = message;
   element.classList.add("show");
   clearTimeout(toast.timer);
   toast.timer = setTimeout(() => element.classList.remove("show"), 2600);
+}
+
+function currentStopwatchTaskName() {
+  return $("#stopwatch-name").value.trim() || "未命名事项";
+}
+
+function addTimeEntry(name, durationMs, source = "stopwatch") {
+  if (!Number.isFinite(durationMs) || durationMs < 1_000) return;
+  timeEntries.push({
+    id: String(Date.now()) + Math.random().toString(16).slice(2),
+    day: todayKey(),
+    name: name || "未命名事项",
+    durationMs: Math.round(durationMs),
+    source
+  });
+  if (timeEntries.length > 1_000) timeEntries = timeEntries.slice(-1_000);
+  save(STORAGE.timeEntries, timeEntries);
 }
 
 function notify(title, body) {
@@ -66,7 +98,7 @@ function updateTodayLabel() {
 
 function updateStopwatch() {
   const elapsed = stopwatch.running ? stopwatch.accumulated + Date.now() - stopwatch.startedAt : stopwatch.accumulated;
-  const taskName = $("#stopwatch-name").value.trim() || "未命名事项";
+  const taskName = currentStopwatchTaskName();
   $("#stopwatch-display").textContent = formatTime(elapsed);
   $("#stopwatch-state").textContent = stopwatch.running ? "正在进行" : elapsed ? "已暂停" : "准备开始";
   $("#stopwatch-task").textContent = taskName;
@@ -77,7 +109,9 @@ function updateStopwatch() {
 
 function stopwatchStartOrPause() {
   if (stopwatch.running) {
-    stopwatch.accumulated += Date.now() - stopwatch.startedAt;
+    const segment = Date.now() - stopwatch.startedAt;
+    stopwatch.accumulated += segment;
+    addTimeEntry(currentStopwatchTaskName(), segment);
     stopwatch.running = false;
     stopwatch.startedAt = null;
     toast("已暂停，随时可以继续。");
@@ -109,6 +143,9 @@ function addLap() {
 }
 
 function resetStopwatch() {
+  if (stopwatch.running) {
+    addTimeEntry(currentStopwatchTaskName(), Date.now() - stopwatch.startedAt);
+  }
   stopwatch = { running: false, accumulated: 0, startedAt: null, laps: [] };
   updateStopwatch();
   renderLaps();
@@ -326,6 +363,89 @@ function updateStats() {
   $("#focus-today-count").textContent = focusData.days[todayKey()] || 0;
 }
 
+function formatAnalyticsDuration(milliseconds) {
+  const seconds = Math.max(0, Math.floor(milliseconds / 1_000));
+  const hours = Math.floor(seconds / 3_600);
+  const minutes = Math.floor((seconds % 3_600) / 60);
+  const remainingSeconds = seconds % 60;
+  if (hours) return `${hours}小时${minutes}分`;
+  if (minutes) return `${minutes} 分钟`;
+  return remainingSeconds ? `${remainingSeconds} 秒` : "0 分钟";
+}
+
+function addAnalyticsCategory(categories, name, durationMs) {
+  if (!Number.isFinite(durationMs) || durationMs < 1_000) return;
+  const label = name || "未命名事项";
+  categories.set(label, (categories.get(label) || 0) + durationMs);
+}
+
+function collectAnalytics(dateValue) {
+  const dateKey = dateKeyFromInput(dateValue);
+  const categories = new Map();
+  tasks.filter((task) => task.day === dateKey).forEach((task) => {
+    addAnalyticsCategory(categories, task.name, taskActualMilliseconds(task));
+  });
+  timeEntries.filter((entry) => entry.day === dateKey).forEach((entry) => {
+    addAnalyticsCategory(categories, entry.name, entry.durationMs);
+  });
+  const completedFocus = focusData.days[dateKey] || 0;
+  if (completedFocus) addAnalyticsCategory(categories, "专注", completedFocus * 25 * 60_000);
+  if (dateKey === todayKey() && stopwatch.running) {
+    addAnalyticsCategory(categories, currentStopwatchTaskName(), Date.now() - stopwatch.startedAt);
+  }
+  return [...categories.entries()]
+    .map(([name, durationMs]) => ({ name, durationMs }))
+    .sort((a, b) => b.durationMs - a.durationMs);
+}
+
+function renderAnalytics() {
+  const dateInput = $("#analytics-date");
+  if (!dateInput.value) dateInput.value = todayInputValue();
+  const dateKey = dateKeyFromInput(dateInput.value);
+  const entries = collectAnalytics(dateInput.value);
+  const total = entries.reduce((sum, entry) => sum + entry.durationMs, 0);
+  const isToday = dateKey === todayKey();
+  const donut = $("#analytics-donut");
+  const legend = $("#analytics-legend");
+  $("#analytics-total-label").textContent = isToday ? "今日累计" : "当日累计";
+  $("#analytics-total").textContent = formatAnalyticsDuration(total);
+  $("#analytics-total-caption").textContent = total ? `${entries.length} 类时间记录` : "暂无记录";
+  $("#analytics-kicker").textContent = isToday ? "今天的时间" : "所选日期";
+  $("#analytics-category-count").textContent = entries.length;
+
+  if (!total) {
+    donut.style.background = "#e9efeb";
+    donut.setAttribute("aria-label", "所选日期暂无时间记录");
+    $("#analytics-headline").textContent = "还没有计时记录";
+    $("#analytics-description").textContent = "开始一项计划或正计时后，时间会自动归入对应事项。";
+    $("#analytics-top-category").textContent = "—";
+    legend.innerHTML = '<div class="analytics-empty">所选日期还没有可统计的时长。</div>';
+    return;
+  }
+
+  let start = 0;
+  const slices = entries.map((entry, index) => {
+    const end = start + entry.durationMs / total * 360;
+    const color = ANALYTICS_COLORS[index % ANALYTICS_COLORS.length];
+    const slice = `${color} ${start.toFixed(2)}deg ${end.toFixed(2)}deg`;
+    start = end;
+    return { ...entry, color, percent: entry.durationMs / total * 100, slice };
+  });
+  donut.style.background = `conic-gradient(${slices.map((slice) => slice.slice).join(", ")})`;
+  donut.setAttribute("aria-label", `所选日期累计 ${formatAnalyticsDuration(total)}，共 ${entries.length} 类事项`);
+  $("#analytics-headline").textContent = isToday ? `今天已记录 ${formatAnalyticsDuration(total)}` : `这一天记录了 ${formatAnalyticsDuration(total)}`;
+  $("#analytics-description").textContent = `最多的时间花在「${slices[0].name}」，占总记录的 ${Math.round(slices[0].percent)}%。`;
+  $("#analytics-top-category").textContent = slices[0].name;
+  legend.innerHTML = slices.map((slice) => `<div class="analytics-legend-row">
+    <i class="analytics-color" style="background:${slice.color}"></i>
+    <div class="analytics-legend-main">
+      <div class="analytics-legend-label"><b>${escapeHtml(slice.name)}</b><span>${slice.percent.toFixed(0)}%</span></div>
+      <div class="analytics-legend-bar"><i style="width:${slice.percent}%;background:${slice.color}"></i></div>
+    </div>
+    <span class="analytics-legend-time">${formatAnalyticsDuration(slice.durationMs)}</span>
+  </div>`).join("");
+}
+
 function addEvent(event) {
   event.preventDefault();
   const name = $("#event-name").value.trim();
@@ -361,6 +481,7 @@ function startTicker() {
     updateCountdown();
     updateFocus();
     renderEvents();
+    renderAnalytics();
   }, 500);
 }
 
@@ -371,6 +492,9 @@ function bindEvents() {
   $("#stopwatch-reset").addEventListener("click", resetStopwatch);
   $("#stopwatch-lap").addEventListener("click", addLap);
   $$(".quick-action").forEach((button) => button.addEventListener("click", () => {
+    if (stopwatch.running) {
+      addTimeEntry(currentStopwatchTaskName(), Date.now() - stopwatch.startedAt);
+    }
     stopwatch = { running: true, accumulated: 0, startedAt: Date.now(), laps: [] };
     $("#stopwatch-name").value = button.dataset.quickName;
     renderLaps();
@@ -410,15 +534,19 @@ function bindEvents() {
   });
   $("#show-all-stats").addEventListener("click", () => $("#stats-sheet").hidden = false);
   $("#close-stats").addEventListener("click", () => $("#stats-sheet").hidden = true);
+  $("#analytics-date").addEventListener("change", renderAnalytics);
   $("#clear-data").addEventListener("click", () => {
     if (!confirm("确定清除本机保存的计划和专注记录吗？此操作无法恢复。")) return;
     tasks = [];
     focusData = { total: 0, days: {} };
+    timeEntries = [];
     localStorage.removeItem(STORAGE.tasks);
     localStorage.removeItem("light-time-events-v1");
     localStorage.removeItem(STORAGE.focus);
+    localStorage.removeItem(STORAGE.timeEntries);
     renderEvents();
     updateStats();
+    renderAnalytics();
     toast("本机记录已清除。");
   });
   $("#notification-button").addEventListener("click", async () => {
@@ -474,6 +602,8 @@ function init() {
   updateCountdown();
   updateFocus();
   updateStats();
+  $("#analytics-date").value = todayInputValue();
+  renderAnalytics();
   startTicker();
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("./service-worker.js").catch(() => {});
 }
