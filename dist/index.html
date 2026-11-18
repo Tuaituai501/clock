@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#fff9f2" />
     <meta name="description" content="轻时刻：明亮、专注的个人计时工具。" />
-    <link rel="manifest" href="./manifest.webmanifest?v=10" />
-    <link rel="stylesheet" href="./styles.css?v=10" />
+    <link rel="manifest" href="./manifest.webmanifest?v=11" />
+    <link rel="stylesheet" href="./styles.css?v=11" />
     <link rel="apple-touch-icon" href="./icon.svg" />
     <title>轻时刻 · 计时工具</title>
   </head>
@@ -37,6 +37,7 @@
           <button class="mode-tab" data-view="countdown" aria-pressed="false">倒计时</button>
           <button class="mode-tab" data-view="focus" aria-pressed="false">专注</button>
           <button class="mode-tab" data-view="events" aria-pressed="false">计划</button>
+          <button class="mode-tab" data-view="analytics" aria-pressed="false">统计</button>
         </nav>
 
         <section id="timer" class="panel active" aria-labelledby="timer-title">
@@ -196,6 +197,44 @@
             <button id="clear-data" class="danger-button">清除本机记录</button>
           </article>
         </section>
+
+        <section id="analytics" class="panel" aria-labelledby="analytics-title" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">时间花在了哪里</p>
+              <h2 id="analytics-title">时间统计</h2>
+            </div>
+            <label class="analytics-date-select">
+              <span>选择日期</span>
+              <input id="analytics-date" type="date" aria-label="选择统计日期" />
+            </label>
+          </div>
+          <article class="analytics-overview card">
+            <div id="analytics-donut" class="analytics-donut" role="img" aria-label="时间占比环形图">
+              <div class="analytics-donut-center">
+                <span id="analytics-total-label">今日累计</span>
+                <strong id="analytics-total">0 分钟</strong>
+                <small id="analytics-total-caption">暂无记录</small>
+              </div>
+            </div>
+            <div class="analytics-overview-copy">
+              <p id="analytics-kicker" class="eyebrow">今日时间</p>
+              <h3 id="analytics-headline">还没有计时记录</h3>
+              <p id="analytics-description">开始一项计划或正计时后，时间会自动归入对应事项。</p>
+              <div class="analytics-mini-stats">
+                <div><span>事项类别</span><b id="analytics-category-count">0</b></div>
+                <div><span>最长投入</span><b id="analytics-top-category">—</b></div>
+              </div>
+            </div>
+          </article>
+          <article class="analytics-breakdown card soft-card">
+            <div class="card-title-row">
+              <h3>各事项占比</h3>
+              <span id="analytics-legend-caption" class="tiny-label">按实际记录时长</span>
+            </div>
+            <div id="analytics-legend" class="analytics-legend"></div>
+          </article>
+        </section>
       </main>
 
       <aside id="install-guide" class="install-guide" hidden>
@@ -209,7 +248,7 @@
       </aside>
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
     </div>
-    <script src="./app.js?v=10"></script>
+    <script src="./app.js?v=11"></script>
   </body>
 </html>
 
